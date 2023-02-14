@@ -171,15 +171,17 @@ const GroupChatModal = ({children}) => {
                           // <ChatLoading />
                           <div>Loading...</div>
                       ) : (
-                          searchResult
-                              ?.slice(0, 4)
-                              .map((user) => (
+                          <Box width={"100%"} maxHeight={"50vh"} overflowY="scroll">
+                                  {searchResult
+                                  ?.map((user) => (
                                   <UserListItem
                                       key={user._id}
                                       user={user}
                                       handleFunction={() => handleGroup(user)}
                                   />
-                              ))
+                                  ))}
+                        </Box>
+                          
                       )}
                   </ModalBody>
                   <ModalFooter>

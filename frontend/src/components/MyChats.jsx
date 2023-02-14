@@ -15,13 +15,12 @@ const MyChats = ({fetchAgain}) => {
     
     const url = process.env.REACT_APP_MAIN_URL;
     
-    const { selectedChat, setSelectedChat, user, chats, setChats } =
-      ChatState();
+    const { selectedChat, setSelectedChat, user, chats, setChats }=ChatState();
 
     const toast = useToast();
 
     const fetchChats = async () => {
-      // console.log(user._id);
+      
       try {
         const config = {
           headers: {
@@ -56,28 +55,29 @@ const MyChats = ({fetchAgain}) => {
       alignItems="center"
       p={3}
       bg="white"
-      w={{ base: "100%", md: "31%" }}
+      w={{ base: "100%",sm:"50%", md: "31%" }}
       borderRadius="lg"
       borderWidth="1px"
     >
       <Box
         pb={3}
         px={3}
-        fontSize={{ base: "28px", md: "30px" }}
         fontFamily="Work sans"
         display="flex"
         w="100%"
         justifyContent="space-between"
         alignItems="center"
       >
-        My Chats
+        <Text fontSize={{ base: "15px", md: "15px", lg: "20px" }} fontWeight={"600"}>
+          My Chats
+        </Text>
         <GroupChatModal>
           <Button
             display="flex"
-            fontSize={{ base: "17px", md: "10px", lg: "17px" }}
+            fontSize={{ base: "13px", sm:"13px", md: "15px", lg: "17px" }}
             rightIcon={<AddIcon />}
           >
-            New Group Chat
+            New Group
           </Button>
         </GroupChatModal>
       </Box>
@@ -106,7 +106,7 @@ const MyChats = ({fetchAgain}) => {
               >
                 <Text>
                   {!chat.isGroupChat
-                    ? getSender(loggedUser, chat.users)
+                    ? getSender(user, chat.users)
                     : chat.chatName}
                 </Text>
                 {chat.latestMessage && (
