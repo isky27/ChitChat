@@ -5,12 +5,10 @@ const User = require("../models/userModel");
 
 const accessChat = asyncHandler(async (req, res) => {
     const { userId } = req.body;
-
     if (!userId) {
         console.log("UserId param not sent with request");
         return res.sendStatus(400);
     }
-
     var isChat = await Chat.find({
         isGroupChat: false,
         $and: [
@@ -34,7 +32,6 @@ const accessChat = asyncHandler(async (req, res) => {
             isGroupChat: false,
             users: [req.user._id, userId],
         };
-
         try {
             const createdChat = await Chat.create(chatData);
             const FullChat = await Chat.findOne({ _id: createdChat._id }).populate(
@@ -48,7 +45,6 @@ const accessChat = asyncHandler(async (req, res) => {
         }
     }
 });
-
 const fetchChats = asyncHandler(async (req,res)=>{
     try {
         Chat.find({users:{$elemMatch:{$eq:req.user._id}}})
@@ -68,22 +64,17 @@ const fetchChats = asyncHandler(async (req,res)=>{
         throw new Error(error.message);
     }
 })
-
 const createGroupChat = asyncHandler(async (req, res) => {
     if (!req.body.users || !req.body.name) {
         return res.status(400).send({ message: "Please Fill all the feilds" });
     }
-
     var users = JSON.parse(req.body.users);
-
     if (users.length < 2) {
         return res
             .status(400)
             .send("More than 2 users are required to form a group chat");
     }
-
     users.push(req.user);
-
     try {
         const groupChat = await Chat.create({
             chatName: req.body.name,
