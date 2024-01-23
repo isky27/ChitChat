@@ -33,7 +33,7 @@ import ProfileModal from "./ProfileModel";
 // import { getSender } from "../../config/ChatLogics";
 import UserListItem from "../userAvatar/UserListItem";
 import { ChatState } from "../Context/ChatProvider";
-
+import {useSelector} from "react-redux"
 
 const SideDrawer = () => {
   const [search, setSearch] = useState("");
@@ -41,12 +41,9 @@ const SideDrawer = () => {
   const [loading, setLoading] = useState(false);
   const [loadingChat, setLoadingChat] = useState(false);
 
-const url = process.env.REACT_APP_MAIN_URL;
 
-// console.log(url)
   const {
     setSelectedChat,
-    user,
     notification,
     setNotification,
     chats,
@@ -55,7 +52,8 @@ const url = process.env.REACT_APP_MAIN_URL;
 
 
   const toast = useToast();
-
+  const { loginDetails } = useSelector((state) => state.auth);
+  
   const { isOpen, onOpen, onClose } = useDisclosure();
   
   const history = useNavigate();
@@ -82,11 +80,11 @@ const url = process.env.REACT_APP_MAIN_URL;
 
       const config = {
         headers: {
-          Authorization: `Bearer ${user.token}`,
+          Authorization: `Bearer ${loginDetails.token}`,
         },
       };
 
-      const { data } = await axios.get(`${url}/user?search=${search}`, config);
+      const { data } = await axios.get(`/user?search=${search}`, config);
 
       setLoading(false);
       setSearchResult(data);
@@ -103,17 +101,16 @@ const url = process.env.REACT_APP_MAIN_URL;
   };
 
   const accessChat = async (userId) => {
-    console.log(userId);
 
     try {
       setLoadingChat(true);
       const config = {
         headers: {
           "Content-type": "application/json",
-          Authorization: `Bearer ${user.token}`,
+          Authorization: `Bearer ${loginDetails.token}`,
         },
       };
-      const { data } = await axios.post(`${url}/chat`, { userId }, config);
+      const { data } = await axios.post(`/chat`, { userId }, config);
 
       if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
       setSelectedChat(data);
@@ -184,12 +181,12 @@ const url = process.env.REACT_APP_MAIN_URL;
               <Avatar
                 size="sm"
                 cursor="pointer"
-                name={user.name}
-                src={user.pic}
+                name={loginDetails.name}
+                src={loginDetails.pic}
               />
             </MenuButton>
             <MenuList>
-              <ProfileModal user={user}>
+              <ProfileModal user={loginDetails}>
                 <MenuItem>My Profile</MenuItem>
               </ProfileModal>
               <MenuDivider />
@@ -211,13 +208,11 @@ const url = process.env.REACT_APP_MAIN_URL;
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <Button
-               onClick={handleSearch}
-               >Go</Button>
+              <Button onClick={handleSearch}>Go</Button>
             </Box>
             {loading ? (
               <ChatLoading />
-            ) : ( 
+            ) : (
               searchResult?.map((user) => (
                 <UserListItem
                   key={user._id}
@@ -231,7 +226,7 @@ const url = process.env.REACT_APP_MAIN_URL;
         </DrawerContent>
       </Drawer>
     </>
-  )
+  );
 }
 
 export default SideDrawer

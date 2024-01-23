@@ -2,18 +2,14 @@ import { Button } from "@chakra-ui/button";
 import { FormControl, FormLabel } from "@chakra-ui/form-control";
 import { Input, InputGroup, InputRightElement } from "@chakra-ui/input";
 import { VStack } from "@chakra-ui/layout";
-import { useToast } from "@chakra-ui/toast";
-import axios from "axios";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ChatState } from "../Context/ChatProvider";
-
+import { authSignupPost } from "../../redux/auth.slice";
+import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
 
 const Signup = () => {
     const [show, setShow] = useState(false);
     const handleClick = () => setShow(!show);
-    const toast = useToast();
-    const history = useNavigate();
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -21,84 +17,28 @@ const Signup = () => {
     const [password, setPassword] = useState("");
     const [pic,setPic] = useState("");
     const [picLoading, setPicLoading] = useState(false);
-    const { setUser } = ChatState();
-
+    const dispatch = useDispatch()
     const submitHandler = async () => {
         setPicLoading(true);
         if (!name || !email || !password || !confirmpassword) {
-            toast({
-                title: "Please Fill all the Feilds",
-                status: "warning",
-                duration: 5000,
-                isClosable: true,
-                position: "bottom",
-            });
+            toast.error("Please Fill all the Feilds");
             setPicLoading(false);
             return;
         }
         if (password !== confirmpassword) {
-            toast({
-                title: "Passwords Do Not Match",
-                status: "warning",
-                duration: 5000,
-                isClosable: true,
-                position: "bottom",
-            });
+            toast.error("Passwords Do Not Match");
             return;
         }
-        try {
-            const config = {
-                headers: {
-                    "Content-type": "application/json",
-                },
-            };
-            const { data } = await axios.post(`http://localhost:8000/user`,
-                {
-                    name,
-                    email,
-                    password,
-                    pic,
-                },
-                config
-            );
-            console.log(data);
-            toast({
-                title: "Registration Successful",
-                status: "success",
-                duration: 5000,
-                isClosable: true,
-                position: "bottom",
-            });
-            localStorage.setItem("userInfo", JSON.stringify(data));
-            setUser(data);
-            setPicLoading(false);
-            history("/chats");
-        } catch (error) {
-            toast({
-                title: "Error Occured!",
-                description: error.message,
-                status: "error",
-                duration: 5000,
-                isClosable: true,
-                position: "bottom",
-            });
-            setPicLoading(false);
-        }
+        dispatch(authSignupPost({name, email, password, pic }));
+        setPicLoading(false);
     };
 
     const postDetails = (pics) => {
         setPicLoading(true);
         if (pics === undefined) {
-            toast({
-                title: "Please Select an Image!",
-                status: "warning",
-                duration: 5000,
-                isClosable: true,
-                position: "bottom",
-            });
+            toast.error("Please Select an Image!");
             return;
         }
-        console.log(pics);
         if (pics.type === "image/jpeg" || pics.type === "image/png") {
             const data = new FormData();
             data.append("file", pics);
@@ -111,21 +51,13 @@ const Signup = () => {
               .then((res) => res.json())
               .then((data) => {
                 setPic(data.url.toString());
-                console.log(data.url.toString());
                 setPicLoading(false);
               })
               .catch((err) => {
-                console.log(err);
                 setPicLoading(false);
               });
         } else {
-            toast({
-                title: "Please Select an Image!",
-                status: "warning",
-                duration: 5000,
-                isClosable: true,
-                position: "bottom",
-            });
+            toast.error("Please Select an Image!");
             setPicLoading(false);
             return;
         }

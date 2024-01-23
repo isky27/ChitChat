@@ -12,16 +12,16 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Login from "../components/authentication/Login";
 import Signup from "../components/authentication/Signup";
+import { useSelector } from "react-redux";
 
 function Authentication() {
 
     const history = useNavigate();
-
+    const {loginDetails} = useSelector(state=>state.auth)
+    
     useEffect(() => {
-        const user = JSON.parse(localStorage.getItem("userInfo"));
-
-        if (user) history("/chats");
-    }, [history]);
+      if (loginDetails) history("/chats");
+    }, [loginDetails,history]);
 
     return (
         <Container maxW="xl" centerContent>

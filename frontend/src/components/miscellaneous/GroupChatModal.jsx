@@ -19,6 +19,8 @@ import { useState } from "react";
 import { ChatState } from "../Context/ChatProvider";
 import UserBadgeItem from "../userAvatar/UserBadgeItem";
 import UserListItem from "../userAvatar/UserListItem";
+import {useSelector} from "react-redux"
+import ErrorBoundary from '../Context/ErrorBounderies';
 
 const GroupChatModal = ({children}) => {
 
@@ -29,9 +31,9 @@ const GroupChatModal = ({children}) => {
     const [searchResult, setSearchResult] = useState([]);
     const [loading, setLoading] = useState(false);
     const toast = useToast();
-    const url = process.env.REACT_APP_MAIN_URL;
+    const { loginDetails } = useSelector((state) => state.auth);
 
-    const { user, chats, setChats } = ChatState();
+    const { chats, setChats } = ChatState();
 
     const handleGroup = (userToAdd) => {
         if (selectedUsers.includes(userToAdd)) {
@@ -57,12 +59,11 @@ const GroupChatModal = ({children}) => {
         try {
             setLoading(true);
             const config = {
-                headers: {
-                    Authorization: `Bearer ${user.token}`,
-                },
+              headers: {
+                Authorization: `Bearer ${loginDetails.token}`,
+              },
             };
-            const { data } = await axios.get(`${url}/user?search=${search}`, config);
-            console.log(data);
+            const { data } = await axios.get(`/user?search=${search}`, config);
             setLoading(false);
             setSearchResult(data);
         } catch (error) {
@@ -95,11 +96,11 @@ const GroupChatModal = ({children}) => {
 
         try {
             const config = {
-                headers: {
-                    Authorization: `Bearer ${user.token}`,
-                },
+              headers: {
+                Authorization: `Bearer ${loginDetails.token}`,
+              },
             };
-            const { data } = await axios.post(`${url}/chat/group`,
+            const { data } = await axios.post(`/chat/group`,
                 {
                     name: groupChatName,
                     users: JSON.stringify(selectedUsers.map((u) => u._id)),
@@ -128,71 +129,75 @@ const GroupChatModal = ({children}) => {
     };
 
   return (
+    <ErrorBoundary fallback={"GroupChatModal.js"}>
       <>
-          <span onClick={onOpen}>{children}</span>
+        <span onClick={onOpen}>{children}</span>
 
-          <Modal onClose={onClose} isOpen={isOpen} isCentered>
-              <ModalOverlay />
-              <ModalContent>
-                  <ModalHeader
-                      fontSize="35px"
-                      fontFamily="Work sans"
-                      display="flex"
-                      justifyContent="center"
-                  >
-                      Create Group Chat
-                  </ModalHeader>
-                  <ModalCloseButton />
-                  <ModalBody display="flex" flexDirection="column" alignItems="center">
-                      <FormControl>
-                          <Input
-                              placeholder="Chat Name"
-                              mb={3}
-                              onChange={(e) => setGroupChatName(e.target.value)}
-                          />
-                      </FormControl>
-                      <FormControl>
-                          <Input
-                              placeholder="Add Users eg: John, Piyush, Jane"
-                              mb={1}
-                              onChange={(e) => handleSearch(e.target.value)}
-                          />
-                      </FormControl>
-                      <Box w="100%" display="flex" flexWrap="wrap">
-                          {selectedUsers.map((u) => (
-                              <UserBadgeItem
-                                  key={u._id}
-                                  user={u}
-                                  handleFunction={() => handleDelete(u)}
-                              />
-                          ))}
-                      </Box>
-                      {loading ? (
-                          // <ChatLoading />
-                          <div>Loading...</div>
-                      ) : (
-                          <Box width={"100%"} maxHeight={"50vh"} overflowY="scroll">
-                                  {searchResult
-                                  ?.map((user) => (
-                                  <UserListItem
-                                      key={user._id}
-                                      user={user}
-                                      handleFunction={() => handleGroup(user)}
-                                  />
-                                  ))}
-                        </Box>
-                          
-                      )}
-                  </ModalBody>
-                  <ModalFooter>
-                      <Button onClick={handleSubmit} colorScheme="blue">
-                          Create Chat
-                      </Button>
-                  </ModalFooter>
-              </ModalContent>
-          </Modal>
+        <Modal onClose={onClose} isOpen={isOpen} isCentered>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader
+              fontSize="35px"
+              fontFamily="Work sans"
+              display="flex"
+              justifyContent="center"
+            >
+              Create Group Chat
+            </ModalHeader>
+            <ModalCloseButton />
+            <ModalBody
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+            >
+              <FormControl>
+                <Input
+                  placeholder="Chat Name"
+                  mb={3}
+                  onChange={(e) => setGroupChatName(e.target.value)}
+                />
+              </FormControl>
+              <FormControl>
+                <Input
+                  placeholder="Add Users eg: John, Piyush, Jane"
+                  mb={1}
+                  onChange={(e) => handleSearch(e.target.value)}
+                />
+              </FormControl>
+              <Box w="100%" display="flex" flexWrap="wrap">
+                {selectedUsers.map((u) => (
+                  <UserBadgeItem
+                    key={u._id}
+                    user={u}
+                    handleFunction={() => handleDelete(u)}
+                  />
+                ))}
+              </Box>
+              {loading ? (
+                // <ChatLoading />
+                <div>Loading...</div>
+              ) : (
+                <Box width={"100%"} maxHeight={"50vh"} overflowY="scroll">
+                  {searchResult?.map((user) => (
+                    <UserListItem
+                      key={user._id}
+                      user={user}
+                      handleFunction={() => handleGroup(user)}
+                    />
+                  ))}
+                </Box>
+              )}
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={handleSubmit} colorScheme="blue">
+                Create Chat
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </>
-  )
+    </ErrorBoundary>
+  );
 }
 
 export default GroupChatModal

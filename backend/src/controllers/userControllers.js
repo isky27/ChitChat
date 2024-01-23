@@ -24,7 +24,6 @@ const registerUser = asyncHandler(async(req,res)=>{
         password,
         pic,
     });
-     console.log(user)
     if (user) {
         res.status(201).send({
             _id: user._id,

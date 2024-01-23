@@ -1,11 +1,10 @@
 import React from "react";
 import { Navigate} from "react-router-dom";
-import { ChatState } from "./ChatProvider";
 
 function PrivateRoute({ children }) {
-  const {user} = ChatState();
+  const userDetails = JSON.parse(localStorage.getItem("userInfo")) || null
      
-  if (Object.keys(user).length === 0) {
+  if (Object.keys(userDetails).length === 0) {
     return <Navigate to="/"/>
   }
   return children;
