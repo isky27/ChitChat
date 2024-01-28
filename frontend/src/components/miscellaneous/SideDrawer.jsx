@@ -23,8 +23,6 @@ import { BellIcon, ChevronDownIcon } from "@chakra-ui/icons";
 import { Avatar } from "@chakra-ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import axios from "axios";
-import { useToast } from "@chakra-ui/toast";
 import ChatLoading from "../ChatLoading";
 import { Spinner } from "@chakra-ui/spinner";
 import ProfileModal from "./ProfileModel";
@@ -33,100 +31,45 @@ import ProfileModal from "./ProfileModel";
 // import { getSender } from "../../config/ChatLogics";
 import UserListItem from "../userAvatar/UserListItem";
 import { ChatState } from "../Context/ChatProvider";
-import {useSelector} from "react-redux"
+import { useDispatch, useSelector} from "react-redux"
+import { accessChat } from '../../redux/chat.slice';
+import { toast } from "react-toastify";
+import { searchUser } from '../../redux/user.slice';
 
 const SideDrawer = () => {
   const [search, setSearch] = useState("");
-  const [searchResult, setSearchResult] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingChat, setLoadingChat] = useState(false);
-
 
   const {
-    setSelectedChat,
     notification,
     setNotification,
-    chats,
-    setChats,
   } = ChatState();
 
-
-  const toast = useToast();
   const { loginDetails } = useSelector((state) => state.auth);
-  
+  const { isAccessChatLoading, myChats } = useSelector((state) => state.chats);
+  const { isUserSearchLoading, searchedUser } = useSelector((state) => state.user);
   const { isOpen, onOpen, onClose } = useDisclosure();
   
   const history = useNavigate();
+  const dispatch = useDispatch()
 
   const logoutHandler = () => {
     localStorage.removeItem("userInfo");
     history("/");
   };
 
-
   const handleSearch = async () => {
     if (!search) {
-      toast({
-        title: "Please Enter something in search",
-        status: "warning",
-        duration: 5000,
-        isClosable: true,
-        position: "top-left",
-      });
+      toast.error("Please Enter something in search");
       return;
     }
-    try {
-      setLoading(true);
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${loginDetails.token}`,
-        },
-      };
-
-      const { data } = await axios.get(`/user?search=${search}`, config);
-
-      setLoading(false);
-      setSearchResult(data);
-    } catch (error) {
-      toast({
-        title: "Error Occured!",
-        description: "Failed to Load the Search Results",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom-left",
-      });
-    }
+    dispatch(searchUser(search));
   };
 
-  const accessChat = async (userId) => {
-
-    try {
-      setLoadingChat(true);
-      const config = {
-        headers: {
-          "Content-type": "application/json",
-          Authorization: `Bearer ${loginDetails.token}`,
-        },
-      };
-      const { data } = await axios.post(`/chat`, { userId }, config);
-
-      if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
-      setSelectedChat(data);
-      setLoadingChat(false);
-      onClose();
-    } catch (error) {
-      toast({
-        title: "Error fetching the chat",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom-left",
-      });
-    }
-  };
+  const handleAccessChat = (userId) =>{
+     dispatch(accessChat(userId));
+     
+     onClose();
+  }
 
   return (
     <>
@@ -165,7 +108,7 @@ const SideDrawer = () => {
                 <MenuItem
                   key={notif._id}
                   onClick={() => {
-                    setSelectedChat(notif.chat);
+                    dispatch(setSelectedChat(notif.chat))
                     setNotification(notification.filter((n) => n !== notif));
                   }}
                 >
@@ -210,18 +153,18 @@ const SideDrawer = () => {
               />
               <Button onClick={handleSearch}>Go</Button>
             </Box>
-            {loading ? (
+            {isUserSearchLoading ? (
               <ChatLoading />
             ) : (
-              searchResult?.map((user) => (
+              searchedUser?.map((user) => (
                 <UserListItem
                   key={user._id}
                   user={user}
-                  handleFunction={() => accessChat(user._id)}
+                  handleFunction={() => handleAccessChat(user._id)}
                 />
               ))
             )}
-            {loadingChat && <Spinner ml="auto" display="flex" />}
+            {isAccessChatLoading && <Spinner ml="auto" display="flex" />}
           </DrawerBody>
         </DrawerContent>
       </Drawer>

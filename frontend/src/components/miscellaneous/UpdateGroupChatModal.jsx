@@ -17,42 +17,31 @@ import {
 } from "@chakra-ui/react";
 import axios from "axios";
 import { useState } from "react";
-import { ChatState } from "../Context/ChatProvider";
-import UserBadgeItem from "../userAvatar/UserBadgeItem"
+import UserBadgeItem from "../userAvatar/UserBadgeItem";
 import UserListItem from "../userAvatar/UserListItem";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { searchUser } from "../../redux/user.slice";
+import { setSelectedChat } from "../../redux/chat.slice";
 
 const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [groupChatName, setGroupChatName] = useState("");
-  const [search, setSearch] = useState("");
-  const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
   const [renameloading, setRenameLoading] = useState(false);
 
-  const { selectedChat, setSelectedChat } = ChatState();
-
+  const { selectedChat } = useSelector((state) => state.chats);
+  
   const { loginDetails } = useSelector((state) => state.auth);
+  const { isUserSearchLoading, searchedUser } = useSelector(
+    (state) => state.user
+  );
+
+  const dispatch = useDispatch()
 
   const handleSearch = async (query) => {
-    setSearch(query);
-    if (!query) {
-      return;
-    }
-    try {
-      setLoading(true);
-      const config = {
-        headers: {
-          Authorization: `Bearer ${loginDetails.token}`,
-        },
-      };
-      const { data } = await axios.get(`/user?search=${search}`, config);
-      setLoading(false);
-      setSearchResult(data);
-    } catch (error) {
-      toast.error("Error Occured!");
-      setLoading(false);
+    if (query) {
+       dispatch(searchUser(query));
     }
   };
 
@@ -66,15 +55,15 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
           Authorization: `Bearer ${loginDetails.token}`,
         },
       };
-      const { data } = await axios.put(`/chat/rename`,
+      const { data } = await axios.put(
+        `/chat/rename`,
         {
           chatId: selectedChat._id,
           chatName: groupChatName,
         },
         config
       );
-
-      setSelectedChat(data);
+      dispatch(setSelectedChat(data));
       setFetchAgain(!fetchAgain);
       setRenameLoading(false);
     } catch (error) {
@@ -121,15 +110,15 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
           Authorization: `Bearer ${loginDetails.token}`,
         },
       };
-      const { data } = await axios.put(`/chat/groupadd`,
+      const { data } = await axios.put(
+        `/chat/groupadd`,
         {
           chatId: selectedChat._id,
           userId: user1._id,
         },
         config
       );
-
-      setSelectedChat(data);
+      dispatch(setSelectedChat(data));
       setFetchAgain(!fetchAgain);
       setLoading(false);
     } catch (error) {
@@ -168,7 +157,8 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
           Authorization: `Bearer ${loginDetails.token}`,
         },
       };
-      const { data } = await axios.put(`/chat/groupremove`,
+      const { data } = await axios.put(
+        `/chat/groupremove`,
         {
           chatId: selectedChat._id,
           userId: user1._id,
@@ -176,7 +166,9 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
         config
       );
 
-      user1._id === loginDetails._id ? setSelectedChat() : setSelectedChat(data);
+      user1._id === loginDetails._id
+        ? dispatch(setSelectedChat())
+        : dispatch(setSelectedChat(data));
       setFetchAgain(!fetchAgain);
       fetchMessages();
       setLoading(false);
@@ -251,11 +243,11 @@ const UpdateGroupChatModal = ({ fetchMessages, fetchAgain, setFetchAgain }) => {
               />
             </FormControl>
 
-            {loading ? (
+            {(loading || isUserSearchLoading) ? (
               <Spinner size="lg" />
             ) : (
               <Box maxHeight={"40vh"} w={"100%"} overflowY="scroll">
-                {searchResult?.map((user) => (
+                {searchedUser?.map((user) => (
                   <UserListItem
                     key={user._id}
                     user={user}

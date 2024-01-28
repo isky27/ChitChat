@@ -16,15 +16,15 @@ import soundMessage from "../assets/message.mp3"
 import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import { ChatState } from "./Context/ChatProvider";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import ErrorBoundary from "./Context/ErrorBounderies";
+import { setSelectedChat } from "../redux/chat.slice";
+import { getMessage, sendMessage, setNewMessageReceived } from "../redux/message.slice";
 
 const ENDPOINT = "http://localhost:8000"; // "https://talk-a-tive.herokuapp.com"; -> After deployment
 var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
@@ -32,6 +32,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const { loginDetails } = useSelector((state) => state.auth);
   
   const toast = useToast();
+  const dispatch = useDispatch()
 
     const defaultOptions = {
       loop: true,
@@ -41,76 +42,28 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         preserveAspectRatio: "xMidYMid slice",
       },
     };
-  const {
-    selectedChat,
-    setSelectedChat,
-    notification,
-    setNotification,
-    windowFocused,
-  } = ChatState();
+  const { notification, setNotification } = ChatState();
+
+  const { selectedChat } = useSelector((state) => state.chats);
+  const { chatMessage, isLoadingMessage } = useSelector((state) => state.message);
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
-
-    try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${loginDetails.token}`,
-        },
-      };
-
-      setLoading(true);
-
-      const { data } = await axios.get(`/message/${selectedChat._id}`,
-        config
-      );
-      setMessages(data);
-      setLoading(false);
-      socket.emit("join chat", selectedChat._id);
-
-    } catch (error) {
-      toast({
-        title: "Error Occured!",
-        description: "Failed to Load the Messages",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom",
-      });
-    }
+    dispatch(getMessage(selectedChat._id));
+    socket.emit("join chat", selectedChat._id);
   };
 
-  const sendMessage = async (event) => {
+  const handleSendMessage = async (event) => {
     if (event.key === "Enter" && newMessage) {
       socket.emit("stop typing", selectedChat._id);
-      try {
-        const config = {
-          headers: {
-            "Content-type": "application/json",
-            Authorization: `Bearer ${loginDetails.token}`,
-          },
-        };
-        setNewMessage("");
-        const { data } = await axios.post(
-          `/message`,
-          {
-            content: newMessage,
-            chatId: selectedChat._id,
-          },
-          config
-        );
-        socket.emit("new message", data);
-        setMessages([...messages, data]);
-      } catch (error) {
-        toast({
-          title: "Error Occured!",
-          description: "Failed to send the Message",
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-          position: "bottom",
-        });
-      }
+      setNewMessage("");
+      dispatch(
+        sendMessage({
+          message:{content: newMessage,
+          chatId: selectedChat._id},
+          socket:socket
+        })
+      );
     }
   };
 
@@ -125,7 +78,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   useEffect(() => {
     fetchMessages();
-
     selectedChatCompare = selectedChat;
     // eslint-disable-next-line
   }, [selectedChat]);
@@ -144,7 +96,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           setFetchAgain(!fetchAgain);
         }
       } else {
-        setMessages([...messages, newMessageRecieved]);
+        dispatch(setNewMessageReceived([...chatMessage,newMessageRecieved]));
       }
     });
   });
@@ -188,16 +140,16 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               <IconButton
                 display={{ base: "flex", md: "none" }}
                 icon={<ArrowBackIcon />}
-                onClick={() => setSelectedChat("")}
+                onClick={() => dispatch(setSelectedChat())}
               />
-              {messages &&
+              {chatMessage &&
                 (!selectedChat.isGroupChat ? (
                   <>
                     <Text fontSize={{ base: "17px", sm: "17px", md: "25px" }}>
-                      {getSender(loginDetails, selectedChat.users)}
+                      {getSender(loginDetails, selectedChat?.users)}
                     </Text>
                     <ProfileModal
-                      user={getSenderFull(loginDetails, selectedChat.users)}
+                      user={getSenderFull(loginDetails, selectedChat?.users)}
                     />
                   </>
                 ) : (
@@ -222,7 +174,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               borderRadius="lg"
               overflowY="hidden"
             >
-              {loading ? (
+              {isLoadingMessage ? (
                 <Spinner
                   size="xl"
                   w={20}
@@ -232,11 +184,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 />
               ) : (
                 <div className="messages">
-                  <ScrollableChat messages={messages} />
+                  <ScrollableChat messages={chatMessage} />
                 </div>
               )}
               <FormControl
-                onKeyDown={sendMessage}
+                onKeyDown={handleSendMessage}
                 id="first-name"
                 isRequired
                 mt={3}

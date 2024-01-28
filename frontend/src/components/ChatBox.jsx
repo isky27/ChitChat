@@ -1,12 +1,12 @@
 import React from 'react'
 import { Box } from "@chakra-ui/layout";
 import SingleChat from "./SingleChat";
-import { ChatState } from "./Context/ChatProvider";
 import ErrorBoundary from './Context/ErrorBounderies';
+import { useSelector } from 'react-redux';
 
 
 const ChatBox = ({fetchAgain,setFetchAgain}) => {
-  const { selectedChat } = ChatState();
+  const { selectedChat } = useSelector((state) => state.chats);
   return (
     <ErrorBoundary fallback={"ChatBox.js"}>
       <Box
