@@ -5,7 +5,7 @@ import ErrorBoundary from './Context/ErrorBounderies';
 import { useSelector } from 'react-redux';
 
 
-const ChatBox = ({fetchAgain,setFetchAgain}) => {
+const ChatBox = ({setFetchAgain}) => {
   const { selectedChat } = useSelector((state) => state.chats);
   return (
     <ErrorBoundary fallback={"ChatBox.js"}>
@@ -15,11 +15,11 @@ const ChatBox = ({fetchAgain,setFetchAgain}) => {
         flexDirection="column"
         p={3}
         bg="white"
-        w={{ base: "100%", sm: "100%", md: "68%" }}
+        w={{ base: "100%", sm: "100%", md: "55%", lg:"60%" }}
         borderRadius="lg"
         borderWidth="1px"
       >
-        <SingleChat fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
+        <SingleChat setFetchAgain={setFetchAgain} />
       </Box>
     </ErrorBoundary>
   );

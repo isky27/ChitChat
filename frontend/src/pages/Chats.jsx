@@ -1,28 +1,34 @@
 import { Box } from "@chakra-ui/layout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Chatbox from "../components/ChatBox";
 import MyChats from "../components/MyChats";
-import SideDrawer from "../components/miscellaneous/SideDrawer";
 import { useSelector } from "react-redux";
 import ErrorBoundary from "../components/Context/ErrorBounderies";
 
 const Chats = () => {
-  const [fetchAgain, setFetchAgain] = useState(false);
+  const [fetchAgain, setFetchAgain] = useState(true);
   const { loginDetails } = useSelector((state) => state.auth);
+
+   const { myChats, isChatLoading } = useSelector((state) => state.chats);
+
+   useEffect(() => {
+     if (!isChatLoading && myChats) {
+       setFetchAgain(false);
+     }
+   }, [myChats, isChatLoading]);
 
   return (
     <ErrorBoundary fallback={"Chat.js"}>
       <div style={{ width: "100%" }}>
-        {loginDetails && <SideDrawer />}
         <Box
           display="flex"
           justifyContent="space-between"
           w="100%"
-          h="91.5vh"
+          h="99vh"
           p="10px"
         >
-          {loginDetails && <MyChats fetchAgain={fetchAgain} />}
-          {loginDetails && (<Chatbox fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />)}
+          {loginDetails && (<MyChats fetchAgain={fetchAgain} />)}
+          {loginDetails && (<Chatbox setFetchAgain={setFetchAgain} />)}
         </Box>
       </div>
     </ErrorBoundary>

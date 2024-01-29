@@ -18,7 +18,7 @@ function Authentication() {
 
     const history = useNavigate();
     const {loginDetails} = useSelector(state=>state.auth)
-    
+    console.log(loginDetails,"Authentication")
     useEffect(() => {
       if (loginDetails) history("/chats");
     }, [loginDetails,history]);
@@ -36,7 +36,7 @@ function Authentication() {
                 borderWidth="1px"
             >
                 <Text fontSize="4xl">
-                    FinFortune
+                    SkyChat
                 </Text>
             </Box>
             <Box bg="white" w="100%" p={4} borderRadius="lg" borderWidth="1px">

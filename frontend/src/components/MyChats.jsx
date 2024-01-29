@@ -9,19 +9,21 @@ import { Button } from "@chakra-ui/react";
 import { useDispatch, useSelector } from 'react-redux';
 import ErrorBoundary from './Context/ErrorBounderies';
 import { getChats, setSelectedChat } from '../redux/chat.slice';
+import SideDrawer from './miscellaneous/SideDrawer';
 
-const MyChats = ({fetchAgain}) => {
-    
-    const { myChats, selectedChat } = useSelector((state) => state.chats);
-    
-    const { loginDetails } = useSelector((state) => state.auth);
+const MyChats = ({ fetchAgain}) => {
+  const { myChats, selectedChat } = useSelector((state) => state.chats);
 
-    const dispatch = useDispatch()
+  const { loginDetails } = useSelector((state) => state.auth);
 
-    useEffect(() => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (fetchAgain) {
       dispatch(getChats());
-    }, [dispatch,fetchAgain]);
-    
+    }
+  }, [dispatch, fetchAgain]);
+
   return (
     <ErrorBoundary fallback={"MyChats.js"}>
       <Box
@@ -30,20 +32,24 @@ const MyChats = ({fetchAgain}) => {
         alignItems="center"
         p={3}
         bg="white"
-        w={{ base: "100%", md: selectedChat ? "31%" : "50%" }}
+        w={{ base: "100%", md:"45%" , lg:"40%" }}
         borderRadius="lg"
         borderWidth="1px"
       >
+        <SideDrawer/>
         <Box
-          pb={3}
-          px={3}
+          py={3}
+          px={2}
           fontFamily="Work sans"
           display="flex"
           w="100%"
           justifyContent="space-between"
           alignItems="center"
         >
-          <Text fontSize={{ base: "15px", md: "15px", lg: "20px" }} fontWeight={"600"}>
+          <Text
+            fontSize={{ base: "15px", md: "15px", lg: "20px" }}
+            fontWeight={"600"}
+          >
             My Chats
           </Text>
           <GroupChatModal>
@@ -68,7 +74,7 @@ const MyChats = ({fetchAgain}) => {
         >
           {myChats ? (
             <Stack overflowY="scroll">
-              {myChats.map((chat) => (
+              {myChats?.map((chat) => (
                 <Box
                   onClick={() => dispatch(setSelectedChat(chat))}
                   cursor="pointer"
@@ -80,7 +86,9 @@ const MyChats = ({fetchAgain}) => {
                   key={chat._id}
                 >
                   <Text>
-                    {!chat.isGroupChat ? getSender(loginDetails, chat.users) : chat.chatName}
+                    {!chat.isGroupChat
+                      ? getSender(loginDetails, chat.users)
+                      : chat.chatName}
                   </Text>
                   {chat.latestMessage && (
                     <Text fontSize="xs">
@@ -100,6 +108,6 @@ const MyChats = ({fetchAgain}) => {
       </Box>
     </ErrorBoundary>
   );
-}
+};
 
 export default MyChats

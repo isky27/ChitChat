@@ -19,7 +19,7 @@ import UserListItem from "../userAvatar/UserListItem";
 import { useDispatch, useSelector } from "react-redux";
 import ErrorBoundary from "../Context/ErrorBounderies";
 import { createGroupChat } from "../../redux/chat.slice";
-import { searchUser } from "../../redux/user.slice";
+import { resetUsers, searchUser } from "../../redux/user.slice";
 import { toast } from "react-toastify";
 import ChatLoading from "../ChatLoading";
 
@@ -62,6 +62,13 @@ const GroupChatModal = ({ children }) => {
     };
 
     dispatch(createGroupChat(payload));
+    handleCloseModal()
+  };
+
+  const handleCloseModal = () => {
+    setSelectedUsers([]);
+    setGroupChatName("");
+    dispatch(resetUsers());
     onClose();
   };
 
@@ -70,7 +77,7 @@ const GroupChatModal = ({ children }) => {
       <>
         <span onClick={onOpen}>{children}</span>
 
-        <Modal onClose={onClose} isOpen={isOpen} isCentered>
+        <Modal onClose={handleCloseModal} isOpen={isOpen} isCentered>
           <ModalOverlay />
           <ModalContent>
             <ModalHeader
@@ -118,6 +125,7 @@ const GroupChatModal = ({ children }) => {
                     <UserListItem
                       key={user._id}
                       user={user}
+                      isSelected={selectedUsers.includes(user)}
                       handleFunction={() => handleGroup(user)}
                     />
                   ))}

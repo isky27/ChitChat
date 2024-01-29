@@ -1,10 +1,9 @@
 import { FormControl } from "@chakra-ui/form-control";
 import { Input } from "@chakra-ui/input";
 import { Box, Text } from "@chakra-ui/layout";
-import { IconButton, Spinner, useToast } from "@chakra-ui/react";
+import { IconButton, Spinner } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { ArrowBackIcon } from "@chakra-ui/icons";
 import ProfileModal from "./miscellaneous/ProfileModel";
 import "./styles.css";
@@ -12,7 +11,7 @@ import ScrollableChat from "./ScrollableChat";
 import Lottie from "react-lottie";
 import animationData from "../Animation/typing.json";
 import soundMessage from "../assets/message.mp3"
-
+import { Avatar } from "@chakra-ui/avatar";
 import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import { ChatState } from "./Context/ChatProvider";
@@ -20,18 +19,21 @@ import { useDispatch, useSelector } from "react-redux";
 import ErrorBoundary from "./Context/ErrorBounderies";
 import { setSelectedChat } from "../redux/chat.slice";
 import { getMessage, sendMessage, setNewMessageReceived } from "../redux/message.slice";
-
+import useSound from "use-sound";
 const ENDPOINT = "http://localhost:8000"; // "https://talk-a-tive.herokuapp.com"; -> After deployment
 var socket, selectedChatCompare;
 
-const SingleChat = ({ fetchAgain, setFetchAgain }) => {
+const SingleChat = ({ setFetchAgain }) => {
   const [newMessage, setNewMessage] = useState("");
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
   const [istyping, setIsTyping] = useState(false);
   const { loginDetails } = useSelector((state) => state.auth);
-  
-  const toast = useToast();
+  const [notificationSound] = useSound(soundMessage, {
+    volume: 0.1,
+    playbackRate: 0.5,
+    interrupt:true,
+  });
   const dispatch = useDispatch()
 
     const defaultOptions = {
@@ -50,6 +52,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const fetchMessages = async () => {
     if (!selectedChat) return;
     dispatch(getMessage(selectedChat._id));
+    setNotification(
+      notification.filter((n) => n.chat._id !== selectedChat._id)
+    );
     socket.emit("join chat", selectedChat._id);
   };
 
@@ -57,13 +62,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     if (event.key === "Enter" && newMessage) {
       socket.emit("stop typing", selectedChat._id);
       setNewMessage("");
-      dispatch(
+      await dispatch(
         sendMessage({
           message:{content: newMessage,
           chatId: selectedChat._id},
           socket:socket
         })
       );
+      setFetchAgain(true);
     }
   };
 
@@ -82,22 +88,20 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     // eslint-disable-next-line
   }, [selectedChat]);
 
-
   useEffect(() => {
     socket.on("message received", (newMessageRecieved) => {
       if (
         !selectedChatCompare ||
         selectedChatCompare._id !== newMessageRecieved.chat._id
       ) {
-        const sound = new Audio(soundMessage);
-        sound.play();
+          notificationSound();
         if (!notification.includes(newMessageRecieved)) {
           setNotification([newMessageRecieved, ...notification]);
-          setFetchAgain(!fetchAgain);
         }
       } else {
         dispatch(setNewMessageReceived([...chatMessage,newMessageRecieved]));
       }
+      setFetchAgain(true);
     });
   });
 
@@ -127,7 +131,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       <>
         {selectedChat ? (
           <>
-            <Box
+           <ErrorBoundary fallback={"SingleChat Header"}>
+             <Box
               fontSize={{ base: "28px", md: "30px" }}
               pb={3}
               px={2}
@@ -137,32 +142,62 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               justifyContent={{ base: "space-between" }}
               alignItems="center"
             >
-              <IconButton
-                display={{ base: "flex", md: "none" }}
-                icon={<ArrowBackIcon />}
-                onClick={() => dispatch(setSelectedChat())}
-              />
               {chatMessage &&
-                (!selectedChat.isGroupChat ? (
+                (!selectedChat?.isGroupChat ? (
                   <>
-                    <Text fontSize={{ base: "17px", sm: "17px", md: "25px" }}>
-                      {getSender(loginDetails, selectedChat?.users)}
-                    </Text>
-                    <ProfileModal
-                      user={getSenderFull(loginDetails, selectedChat?.users)}
-                    />
+                    <Box
+                      display="flex"
+                      gap="2"
+                      alignItems="center"
+                      flexWrap="wrap"
+                    >
+                      <IconButton
+                        display={{ base: "flex", md: "none" }}
+                        icon={<ArrowBackIcon />}
+                        onClick={() => dispatch(setSelectedChat())}
+                      />
+                      <ProfileModal user={getSenderFull(loginDetails, selectedChat?.users)}>
+                        <Box
+                          display="flex"
+                          gap="2"
+                          alignItems="center"
+                          flexWrap="wrap"
+                          cursor="pointer"
+                        >
+                          <Avatar
+                            size="sm"
+                            cursor="pointer"
+                            name={getSender(loginDetails, selectedChat?.users)}
+                            src={
+                              getSenderFull(loginDetails, selectedChat?.users)
+                                ?.pic
+                            }
+                          />
+                          <Text fontSize={{ base: "17px", sm: "17px", md: "25px" }}>
+                            {getSender(loginDetails, selectedChat?.users)}
+                          </Text>
+                        </Box>
+                      </ProfileModal>
+                    </Box>
                   </>
                 ) : (
                   <>
-                    {selectedChat.chatName.toUpperCase()}
-                    <UpdateGroupChatModal
-                      fetchMessages={fetchMessages}
-                      fetchAgain={fetchAgain}
-                      setFetchAgain={setFetchAgain}
-                    />
+                    <Box display="flex" gap="2" alignItems="center">
+                      <IconButton
+                        display={{ base: "flex", md: "none" }}
+                        icon={<ArrowBackIcon />}
+                        onClick={() => dispatch(setSelectedChat())}
+                      />
+                    <UpdateGroupChatModal fetchMessages={fetchMessages} setFetchAgain={setFetchAgain}>
+                      <Text fontSize={{ base: "17px", sm: "17px", md: "25px" }}>
+                        {selectedChat.chatName.toUpperCase()}
+                      </Text>
+                    </UpdateGroupChatModal>
+                    </Box>
                   </>
                 ))}
             </Box>
+           </ErrorBoundary>
             <Box
               display="flex"
               flexDirection="column"
@@ -193,7 +228,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 isRequired
                 mt={3}
               >
-                {istyping ? (
+                {istyping && (
                   <div
                     style={{
                       marginBottom: "10px",
@@ -208,8 +243,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                       justifyContent="flex-start"
                     />
                   </div>
-                ) : (
-                  <></>
                 )}
                 <Input
                   variant="filled"
