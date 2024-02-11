@@ -30,7 +30,8 @@ const server = app.listen(PORT,async()=>{
 })
 
 const io =require('socket.io')(server,{
-    pingTimeout:60000,
+    pingInterval: 40000, // Send ping every 5 seconds
+    pingTimeout: 60000,
     cors : {
         origin : "http://localhost:3000"
     }
@@ -62,6 +63,16 @@ io.on("connection", (socket)=>{
 
             socket.in(user._id).emit("message received", newMessageRecieved);
         })
+    });
+
+    socket.on('ping', () => {
+        // Respond with pong event to acknowledge ping
+        socket.emit('pong');
+    });
+
+    socket.on('disconnect', (reason) => {
+        console.error('Disconnected from server:', reason);
+        // Handle disconnection (e.g., retry connecting or notify the user)
     });
 
     socket.off("setup", ()=>{

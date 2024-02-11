@@ -27,8 +27,6 @@ import { useState } from "react";
 import ChatLoading from "../ChatLoading";
 import { Spinner } from "@chakra-ui/spinner";
 import ProfileModal from "./ProfileModel";
-import NotificationBadge from "react-notification-badge";
-import { Effect } from "react-notification-badge";
 import UserListItem from "../userAvatar/UserListItem";
 import { ChatState } from "../Context/ChatProvider";
 import { useDispatch, useSelector} from "react-redux"
@@ -112,16 +110,17 @@ const SideDrawer = () => {
               <Text px={2}>Search User</Text>
             </Button>
           </Tooltip>
-          <div>
+          <Box d="flex" alignItems="center" gap={2}>
             <Menu placement="bottom-end">
-              <MenuButton p={1}>
-                <NotificationBadge
-                  count={notification.length}
-                  effect={Effect.SCALE}
-                />
-                <BellIcon fontSize="2xl" m={1} />
+              <MenuButton p={1} className="notification-icon-btn">
+                <BellIcon fontSize="2xl" mr={4} />
+                {notification.length > 0 && (
+                  <span className="notification-icon_badge">
+                    {notification.length>99 ? "99+" : notification.length}
+                  </span>
+                )}
               </MenuButton>
-              <MenuList pl={2}>
+              <MenuList pl={1}>
                 {!notification.length && "No New Messages"}
                 {Object.values(getGroupdNotification(notification)).map(
                   (groupedNotif) => (
@@ -145,7 +144,7 @@ const SideDrawer = () => {
               </MenuList>
             </Menu>
             <Menu placement="bottom-end">
-              <MenuButton as={Button} bg="white">
+              <MenuButton as={Button} bg="white" p={0}>
                 <Avatar
                   size="sm"
                   cursor="pointer"
@@ -161,7 +160,7 @@ const SideDrawer = () => {
                 <MenuItem onClick={logoutHandler}>Logout</MenuItem>
               </MenuList>
             </Menu>
-          </div>
+          </Box>
         </Box>
 
         <Drawer placement="left" onClose={onClose} isOpen={isOpen}>

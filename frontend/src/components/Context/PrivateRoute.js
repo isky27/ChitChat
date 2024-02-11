@@ -4,8 +4,6 @@ import {Navigate} from "react-router-dom";
 export function AuthenticateRoute({ children }) {
   const userDetails = JSON.parse(localStorage.getItem("userInfo")) || ""
 
- console.log(userDetails,"sajkjsdjks")
-
   if (Object.keys(userDetails)?.length === 0) {
     console.log(userDetails,"dsbsjnjsdknjks")
     return children 
@@ -17,8 +15,6 @@ export function AuthenticateRoute({ children }) {
 export function PrivateRoute({ children }) {
   const userDetails = JSON.parse(localStorage.getItem("userInfo")) || ""
   
-  console.log(userDetails,"dsbdjsdjkdndsjjds")
-
   if (Object.keys(userDetails)?.length === 0) {
     return <Navigate to="/"/>
   }

@@ -41,11 +41,14 @@ const sendMessage = asyncHandler(async(req,res)=>{
 
 const allMessages = asyncHandler(async(req,res)=>{
     try {
-        const messages = await Message.find({chat:req.params.chatId}).populate(
+        const pageSize = 30
+        const skipCount = (req.params.page - 1) * pageSize;
+        const totalCount = await Message.countDocuments({ chat: req.params.chatId });
+        const messages = await Message.find({ chat: req.params.chatId }).sort({ _id: -1 }).skip(skipCount).limit(pageSize).populate(
             "sender","name pic email"
         ).populate("chat");
 
-        res.json(messages)
+        res.json({ messages, totalCount})
     } catch (error) {
         res.status(400);
         throw new Error(error.message);
